@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jms="http://www.springframework.org/schema/jms"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms.xsd">
+
+    <!--ActiveMQ ConnectionFactory-->
+    <bean id="activeMQConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="tcp://localhost:61616"/>
+        <!--配置重试参数对象-->
+        <property name="redeliveryPolicy" ref="redeliveryPolicy"/>
+    </bean>
+
+    <!--配置重试参数-->
+    <bean id="redeliveryPolicy" class="org.apache.activemq.RedeliveryPolicy">
+        <!--重试次数-->
+        <property name="maximumRedeliveries" value="3"/>
+        <!--初次重试延迟时间-->
+        <property name="initialRedeliveryDelay" value="3000"/>
+        <!--每次重试延迟时间-->
+        <property name="redeliveryDelay" value="3000"/>
+    </bean>
+
+    <!--Spring JMS ConnectionFactory-->
+    <bean id="connectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
+        <property name="targetConnectionFactory" ref="activeMQConnectionFactory"/>
+    </bean>
+
+    <!--JMSTemplate-->
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <!--配置链接工厂-->
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <!--配置签收模式为客户端签收 1 自动签收（默认） 2 客户端签收-->
+        <property name="sessionAcknowledgeMode" value="2"/>
+    </bean>
+
+    <!--监听Queue消息 基于注解-->
+    <bean id="jmsListenerContainerFactory" class="org.springframework.jms.config.DefaultJmsListenerContainerFactory">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <!--消息签收模式-->
+        <property name="sessionAcknowledgeMode" value="2"/>
+    </bean>
+    <jms:annotation-driven/>
+
+
+</beans>
